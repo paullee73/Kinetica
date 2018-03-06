@@ -1,3 +1,4 @@
+
 from __future__ import print_function
 
 import collections
@@ -40,6 +41,11 @@ def retrieve():
 
     weather_table_duplicate = gpudb.GPUdbTable( None, weather_table_name, db = h_db )
 
+    print ( "\n")
+    print ( "INSERTING DATA")
+    print ( "--------------")
+    print ()
+
     datum = collections.OrderedDict()
     datum["city"] = "Washington, D.C."
     datum["state_province"] = "--"
@@ -63,10 +69,10 @@ def retrieve():
     weather_record_type = weather_table.get_table_type()
     single_record = [ gpudb.GPUdbRecord( weather_record_type, datum ).binary_data ]
 
-    # Insert the record into the table
     response = h_db.insert_records(table_name = weather_table_name, data = single_record, list_encoding = "binary")
     print ( "Number of single records inserted:  {}".format(response["count_inserted"]))
 
+    records = []
     records.append( ["Paris", "TX", "USA", -95.547778, 33.6625, 64.6, "UTC-6"] )
     records.append( ["Memphis", "TN", "USA", -89.971111, 35.1175, 63, "UTC-6"] )
     records.append( ["Sydney", "Nova Scotia", "Canada", -60.19551, 46.13631, 44.5, "UTC-4"] )
@@ -89,28 +95,18 @@ def retrieve():
     records.append( ["Perth", "Western Australia", "Australia", 115.858889, -31.952222, 68, "UTC+8"] )
 
     weather_table.insert_records( records )
-
-    print ( "{:<20s} {:<25s} {:<15s} {:<10s} {:<11s} {:<9s} {:<8s}".format("City","State/Province","Country","Latitude","Longitude","Avg. Temp","Time Zone"))
-    print ( "{:=<20s} {:=<25s} {:=<15s} {:=<10s} {:=<11s} {:=<9s} {:=<9s}".format("", "", "", "", "", "", ""))
-    for weatherLoc in weather_table.get_records( offset = 10, limit = 10 ):
-        print ( "{city:<20s} {state:<25s} {country:<15s} {y:10.6f} {x:11.6f} {avg_temp:9.1f}   {time_zone}"
-                "".format( city = weatherLoc["city"], state = weatherLoc["state_province"], country = weatherLoc["country"],
-                           y = weatherLoc["y"], x = weatherLoc["x"], avg_temp = weatherLoc["avg_temp"], time_zone = weatherLoc["time_zone"] ) )
-
+    
     weatherLocs = h_db.get_records( table_name = weather_table_name, offset = 0, limit = 10,
                                     encoding = "json", options = {"sort_by":"city"} )['records_json']
-
-    print ( "{:<20s} {:<25s} {:<15s} {:<10s} {:<11s} {:<9s} {:<8s}".format("City","State/Province","Country","Latitude","Longitude","Avg. Temp","Time Zone"))
-    print ( "{:=<20s} {:=<25s} {:=<15s} {:=<10s} {:=<11s} {:=<9s} {:=<9s}".format("", "", "", "", "", "", ""))
     for weatherLoc in weatherLocs:
-        print ( "{city:<20s} {state_province:<25s} {country:<15s} {y:10.6f} {x:11.6f} {avg_temp:9.1f}   {time_zone}".format(**weatherLoc))
-
+        print ( "{city:<20s} {state_province:<25s} {country:<15s} {y:10.6f} {x:11.6f} {avg_temp:9.1f}   {time_zone}".format(**json.loads(weatherLoc)))
 
     response = h_db.get_records( table_name = weather_table_name, offset = 10, limit = 25,
                                  encoding = "binary", options = {"sort_by":"city"})
     weatherLocs = gpudb.GPUdbRecord.decode_binary_data(response["type_schema"], response["records_binary"])
 
     for weatherLoc in weatherLocs:
-    print ( "{city:<20s} {state_province:<25s} {country:<15s} {y:10.6f} {x:11.6f} {avg_temp:9.1f}   {time_zone}".format(**weatherLoc))
+        print ( "{city:<20s} {state_province:<25s} {country:<15s} {y:10.6f} {x:11.6f} {avg_temp:9.1f}   {time_zone}".format(**weatherLoc))
 
+   
 retrieve()
